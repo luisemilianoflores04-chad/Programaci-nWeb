@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Catálogo de Videojuegos</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 0; background: #f4f5f7; color: #222; }
+    header { background: #3ecf8e; padding: 1.5rem; text-align: center; color: #fff; }
+    main { max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+    table { width: 100%; border-collapse: collapse; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.1); }
+    th, td { padding: .75rem 1rem; text-align: left; border-bottom: 1px solid #e5e7eb; }
+    th { background: #1f2937; color: #fff; }
+    tr:hover td { background: #f0fdf4; }
+    #estado { text-align: center; margin: 1rem 0; }
+    .error { color: #b91c1c; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🎮 Catálogo de Videojuegos</h1>
+    <p>Datos en vivo desde Supabase</p>
+  </header>
+
+  <main>
+    <p id="estado">Cargando...</p>
+    <table id="tabla" hidden>
+      <thead>
+        <tr>
+          <th>ID</th><th>Título</th><th>Plataforma</th>
+          <th>Género</th><th>Año</th><th>Precio</th>
+        </tr>
+      </thead>
+      <tbody id="cuerpo"></tbody>
+    </table>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    // 👇 Reemplaza con los datos de tu proyecto (Project Settings > API)
+    const SUPABASE_URL = 'https://jrkfxngsrtigftmvlbrf.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_QQKM5U8qvs3tep_ImtsMBw_mp-AOvsP';
+
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    async function cargarVideojuegos() {
+      const estado = document.getElementById('estado');
+      const tabla = document.getElementById('tabla');
+      const cuerpo = document.getElementById('cuerpo');
+
+      const { data, error } = await supabaseClient
+        .from('videojuegos')
+        .select('*')
+        .order('id', { ascending: true });
+
+      if (error) {
+        estado.textContent = 'Error: ' + error.message;
+        estado.classList.add('error');
+        return;
+      }
+
+      data.forEach(j => {
+        const fila = document.createElement('tr');
+        [j.id, j.titulo, j.plataforma, j.genero, j.anio, '$' + Number(j.precio).toFixed(2)]
+          .forEach(valor => {
+            const td = document.createElement('td');
+            td.textContent = valor;
+            fila.appendChild(td);
+          });
+        cuerpo.appendChild(fila);
+      });
+
+      estado.hidden = true;
+      tabla.hidden = false;
+    }
+
+    cargarVideojuegos();
+  </script>
+</body>
+</html>
