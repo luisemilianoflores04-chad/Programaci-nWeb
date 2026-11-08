@@ -12,6 +12,8 @@
     th, td { padding: .75rem 1rem; text-align: left; border-bottom: 1px solid #e5e7eb; }
     th { background: #1f2937; color: #fff; }
     tr:hover td { background: #f0fdf4; }
+    #buscador { width: 100%; box-sizing: border-box; padding: .75rem 1rem; margin-bottom: 1rem; font-size: 1rem; border: 2px solid #d1d5db; border-radius: 8px; }
+    #buscador:focus { outline: none; border-color: #3ecf8e; }
     #estado { text-align: center; margin: 1rem 0; }
     .error { color: #b91c1c; }
   </style>
@@ -23,6 +25,7 @@
   </header>
 
   <main>
+    <input type="text" id="buscador" placeholder="🔍 Buscar por título..." autocomplete="off">
     <p id="estado">Cargando...</p>
     <table id="tabla" hidden>
       <thead>
@@ -42,11 +45,47 @@
 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    async function cargarVideojuegos() {
-      const estado = document.getElementById('estado');
-      const tabla = document.getElementById('tabla');
-      const cuerpo = document.getElementById('cuerpo');
+    const estado = document.getElementById('estado');
+    const tabla = document.getElementById('tabla');
+    const cuerpo = document.getElementById('cuerpo');
+    const buscador = document.getElementById('buscador');
 
+    let videojuegos = [];
+
+    function mostrarTabla(lista) {
+      cuerpo.innerHTML = '';
+
+      if (lista.length === 0) {
+        estado.textContent = 'No se encontraron resultados.';
+        estado.hidden = false;
+        tabla.hidden = true;
+        return;
+      }
+
+      estado.hidden = true;
+      tabla.hidden = false;
+
+      lista.forEach(j => {
+        const fila = document.createElement('tr');
+        [j.id, j.titulo, j.plataforma, j.genero, j.anio, '$' + Number(j.precio).toFixed(2)]
+          .forEach(valor => {
+            const td = document.createElement('td');
+            td.textContent = valor;
+            fila.appendChild(td);
+          });
+        cuerpo.appendChild(fila);
+      });
+    }
+
+    buscador.addEventListener('input', () => {
+      const texto = buscador.value.trim().toLowerCase();
+      const filtrados = videojuegos.filter(j =>
+        j.titulo.toLowerCase().includes(texto)
+      );
+      mostrarTabla(filtrados);
+    });
+
+    async function cargarVideojuegos() {
       const { data, error } = await supabaseClient
         .from('videojuegos')
         .select('*')
@@ -58,19 +97,8 @@
         return;
       }
 
-      data.forEach(j => {
-        const fila = document.createElement('tr');
-        [j.id, j.titulo, j.plataforma, j.genero, j.anio, '$' + Number(j.precio).toFixed(2)]
-          .forEach(valor => {
-            const td = document.createElement('td');
-            td.textContent = valor;
-            fila.appendChild(td);
-          });
-        cuerpo.appendChild(fila);
-      });
-
-      estado.hidden = true;
-      tabla.hidden = false;
+      videojuegos = data;
+      mostrarTabla(videojuegos);
     }
 
     cargarVideojuegos();
